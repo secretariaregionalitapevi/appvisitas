@@ -1,0 +1,14 @@
+{
+  "name": "cadastro-visitas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de Lançamento de Visitas - CCB Regional Itapevi",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Login - Registros de Visitas - Regional Itapevi</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <link rel="stylesheet" href="/styles/main.css?v=1.0.1" />
+    <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="CCB Visitas" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+  <link rel="icon" href="/icons/icon-192.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/scripts/auth.js?v=1.0.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body style="margin: 0; background: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column;">
+  
+  <div class="sac-card">
+    <div class="sac-header">
+      <img src="/assets/logo-ccb.png" alt="CCB" class="sac-logo" />
+      <h1 class="sac-title">Registros de Visitas</h1>
+      <p class="sac-subtitle">Acompanhamento Regional - Visitas</p>
+    </div>
+
+    <div class="sac-body">
+      <form id="loginForm" class="sac-form">
+        <div class="form-group">
+          <div class="input-icon-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </div>
+          <input type="email" name="email" placeholder="E-mail" required />
+        </div>
+
+        <div class="form-group">
+          <div class="input-icon-box">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <input type="password" name="password" id="loginPassword" placeholder="Sua senha" required />
+          <div class="password-toggle" onclick="togglePassword('loginPassword')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
+        </div>
+
+        <p id="loginFeedback" style="color: var(--err); font-size: 14px; min-height: 20px;"></p>
+
+        <button type="submit" class="sac-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          LOGIN
+        </button>
+
+        <div style="margin-top: 15px;">
+          <a href="#" style="color: #64748b; text-decoration: none; font-size: 13px;">Esqueceu a senha?</a>
+        </div>
+      </form>
+
+      <div class="sac-footer-links">
+        Não tem uma conta?<br>
+        <a href="/registro.html" class="sac-btn-secondary">Criar conta</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sac-page-footer">
+    © Aplicativo Visitas v1.1<br>
+    Registros de Visitas - Regional Itapevi
+  </div>
+
+</body>
+</html>

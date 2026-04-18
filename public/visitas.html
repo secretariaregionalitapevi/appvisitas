@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Lançamento - Registros de Visitas - Regional Itapevi</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="stylesheet" href="/styles/main.css?v=1.0.3" />
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="CCB Visitas" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+  <link rel="icon" href="/icons/icon-192.png" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/scripts/auth.js?v=1.0.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body style="margin: 0; background: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column;">
+  <div class="top-nav">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="/assets/logo-ccb.png" style="height: 46px;" alt="CCB" />
+      <span style="font-weight: 700; color: var(--brand);">Regional Itapevi</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <a href="/" class="btn-logout btn-back">&larr; Voltar</a>
+      <a href="#" id="btnLogoutTop" class="btn-logout">Sair</a>
+    </div>
+  </div>
+
+  <main class="auth-wrap">
+    <div class="card card-wide">
+      <header class="card-header">
+        <img src="/assets/logo-ccb.png" alt="CCB" class="logo" style="max-width: 120px; margin-bottom: 8px;" />
+        <h1>Registros de Visitas</h1>
+        <p id="headerSubtitle">Acompanhamento Regional - Visitas</p>
+      </header>
+
+      <div class="card-body">
+        <div id="selectionSummary" style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 15px; border-left: 4px solid var(--brand); line-height: 1.6;">
+          Carregando informações...
+        </div>
+
+        <form id="visitasForm">
+          <div id="datePickerRow" class="form-group hidden">
+            <label for="selectedDate">Selecione o Domingo</label>
+            <select id="selectedDate" name="selected_date">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+
+          <div id="cardsContainer">
+            <!-- Cards gerados dinamicamente via visitas.js -->
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Finalizar e Enviar Histórico</button>
+        </form>
+      </div>
+
+      <footer class="card-footer">
+        Registros de Visitas - Regional Itapevi
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    window.addEventListener('load', async () => {
+      window.currentUser = await window.checkAuth();
+      if (window.currentUser && window.updateSummaryWithName) {
+        window.updateSummaryWithName(window.currentUser);
+      }
+
+      const btnLogout = document.getElementById('btnLogoutTop');
+      if (btnLogout) {
+        btnLogout.onclick = async () => {
+          if (!window.supabaseClient) await window.initSupabase();
+          await window.supabaseClient.auth.signOut();
+          window.location.href = '/login.html';
+        };
+      }
+    });
+  </script>
+  <script src="/scripts/visitas.js?v=1.0.3"></script>
+</body>
+</html>
+

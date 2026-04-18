@@ -1,0 +1,433 @@
+﻿{
+    "name":  "Cadastros Musicalizacao (Crianca/Monitor) -\u003e Sheets (Corrigido)",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "304a56e6-8f63-4b8c-9798-3e0a35f6be70-musicalizacao-infiantil",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -760,
+                                       0
+                                   ],
+                      "id":  "7c2944fe-37ce-4094-a14b-e62059539d40",
+                      "name":  "Webhook",
+                      "webhookId":  "304a56e6-8f63-4b8c-9798-3e0a35f6be70"
+                  },
+                  {
+                      "parameters":  {
+                                         "rules":  {
+                                                       "values":  [
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  false,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "c95c95f6-58b9-4514-9730-0b9cb2f54bc1",
+                                                                                                                    "leftValue":  "={{ ((($json.body || $json).tipo) || (($json.body || $json).nome_crianca ? \u0027crianca\u0027 : (($json.body || $json).nome_completo ? \u0027monitor\u0027 : \u0027\u0027))).toString().toLowerCase().trim() }}",
+                                                                                                                    "rightValue":  "crianca",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Crianca"
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  false,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "a9f8d67f-40ff-4f6d-9f42-f646177551df",
+                                                                                                                    "leftValue":  "={{ ((($json.body || $json).tipo) || (($json.body || $json).nome_crianca ? \u0027crianca\u0027 : (($json.body || $json).nome_completo ? \u0027monitor\u0027 : \u0027\u0027))).toString().toLowerCase().trim() }}",
+                                                                                                                    "rightValue":  "monitor",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Monitores"
+                                                                      }
+                                                                  ]
+                                                   },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.switch",
+                      "typeVersion":  3.3,
+                      "position":  [
+                                       -520,
+                                       0
+                                   ],
+                      "id":  "1843c30a-dd3f-4eb2-a89c-f392b89991f6",
+                      "name":  "Switch Tipo"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "function onlyDigits(v){return (v ?? \u0027\u0027).toString().replace(/\\D+/g, \u0027\u0027);}\nfunction yn(v){\n  const s = (v ?? \u0027\u0027).toString().trim().toLowerCase();\n  if([\u0027sim\u0027,\u0027s\u0027,\u0027yes\u0027,\u0027y\u0027,\u0027true\u0027,\u00271\u0027].includes(s)) return \u0027Sim\u0027;\n  if([\u0027não\u0027,\u0027nao\u0027,\u0027n\u0027,\u0027no\u0027,\u0027false\u0027,\u00270\u0027].includes(s)) return \u0027Não\u0027;\n  return s === \u0027\u0027 ? \u0027\u0027 : v;\n}\nfunction normSexo(v){\n  const s = (v ?? \u0027\u0027).toString().trim().toLowerCase();\n  if([\u0027menino\u0027,\u0027m\u0027,\u0027masc\u0027,\u0027masculino\u0027].includes(s)) return \u0027Menino\u0027;\n  if([\u0027menina\u0027,\u0027f\u0027,\u0027fem\u0027,\u0027feminino\u0027].includes(s)) return \u0027Menina\u0027;\n  return v ?? \u0027\u0027;\n}\nfunction parseBRDate(d){\n  const s = (d ?? \u0027\u0027).toString().trim();\n  const m = s.match(/^(\\d{2})\\/(\\d{2})\\/(\\d{4})$/);\n  if(!m) return { iso: \u0027\u0027, ok: false };\n  const iso = `${m[3]}-${m[2]}-${m[1]}`;\n  const dt = new Date(iso + \u0027T00:00:00\u0027);\n  if(Number.isNaN(dt.getTime())) return { iso: \u0027\u0027, ok: false };\n  return { iso, ok: true };\n}\nfunction calcAge(iso){\n  if(!iso) return \u0027\u0027;\n  const dob = new Date(iso + \u0027T00:00:00\u0027);\n  const now = new Date();\n  let age = now.getFullYear() - dob.getFullYear();\n  const m = now.getMonth() - dob.getMonth();\n  if(m \u003c 0 || (m === 0 \u0026\u0026 now.getDate() \u003c dob.getDate())) age--;\n  return age;\n}\n\nconst body = items[0].json.body ?? items[0].json;\nconst uuid = (body.uuid ?? body.registro_uuid ?? body.id ?? \u0027\u0027).toString();\nconst tipoIn = ((body.tipo_original ?? body.tipo ?? \u0027crianca\u0027).toString().toLowerCase().trim()) || \u0027crianca\u0027;\nconst dob = parseBRDate(body.data_nascimento);\nconst idadeCalc = calcAge(dob.iso);\nconst idade = body.idade !== undefined \u0026\u0026 body.idade !== null \u0026\u0026 body.idade !== \u0027\u0027 ? body.idade : idadeCalc;\n\nconst out = {\n  created_at: body.created_at ?? new Date().toISOString(),\n  uuid,\n  tipo: tipoIn,\n  nome_crianca: body.nome_crianca ?? \u0027\u0027,\n  sexo: normSexo(body.sexo),\n  data_nascimento: body.data_nascimento ?? \u0027\u0027,\n  data_nascimento_iso: dob.iso,\n  idade: idade,\n  comum_congregacao: body.comum_congregacao ?? \u0027\u0027,\n  nome_pai: body.nome_pai ?? \u0027\u0027,\n  pai_e_crente: yn(body.pai_e_crente),\n  nome_mae: body.nome_mae ?? \u0027\u0027,\n  mae_e_crente: yn(body.mae_e_crente),\n  pais_vivem_juntos: yn(body.pais_vivem_juntos),\n  crianca_vive_com_os_pais: yn(body.crianca_vive_com_os_pais),\n  se_nao_vive_com_pais_com_quem_vive: body.se_nao_vive_com_pais_com_quem_vive ?? \u0027\u0027,\n  nome_responsavel: body.nome_responsavel ?? \u0027\u0027,\n  celular_responsavel: onlyDigits(body.celular_responsavel),\n  tem_whatsapp: yn(body.tem_whatsapp),\n  participa_reunioes_jovens_menores: yn(body.participa_reunioes_jovens_menores),\n  participa_espaco_infantil: yn(body.participa_espaco_infantil),\n  logradouro_numero: body.logradouro_numero ?? \u0027\u0027,\n  complemento: body.complemento ?? \u0027\u0027,\n  bairro: body.bairro ?? \u0027\u0027,\n  cidade: body.cidade ?? \u0027\u0027,\n  cep: onlyDigits(body.cep),\n  dificuldade_aprendizagem: yn(body.dificuldade_aprendizagem),\n  dificuldade_descricao: body.dificuldade_descricao ?? \u0027\u0027,\n  faz_terapia: yn(body.faz_terapia),\n  terapia_especialidade: body.terapia_especialidade ?? \u0027\u0027\n};\n\nreturn [{ json: out }];"
+                                     },
+                      "id":  "119a7ea4-745b-4fd7-a87e-d1aeb5d00541",
+                      "name":  "Normalizar Crianca",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -240,
+                                       -140
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "function onlyDigits(v){return (v ?? \u0027\u0027).toString().replace(/\\D+/g, \u0027\u0027);}\nfunction yn(v){\n  const s = (v ?? \u0027\u0027).toString().trim().toLowerCase();\n  if([\u0027sim\u0027,\u0027s\u0027,\u0027yes\u0027,\u0027y\u0027,\u0027true\u0027,\u00271\u0027].includes(s)) return \u0027Sim\u0027;\n  if([\u0027não\u0027,\u0027nao\u0027,\u0027n\u0027,\u0027no\u0027,\u0027false\u0027,\u00270\u0027].includes(s)) return \u0027Não\u0027;\n  return s === \u0027\u0027 ? \u0027\u0027 : v;\n}\n\nconst body = items[0].json.body ?? items[0].json;\nconst uuid = (body.uuid ?? body.registro_uuid ?? body.id ?? \u0027\u0027).toString();\nconst tipoIn = ((body.tipo_original ?? body.tipo ?? \u0027monitor\u0027).toString().toLowerCase().trim()) || \u0027monitor\u0027;\n\nconst out = {\n  created_at: body.created_at ?? new Date().toISOString(),\n  uuid,\n  tipo: tipoIn,\n  nome_completo: body.nome_completo ?? \u0027\u0027,\n  comum_congregacao: body.comum_congregacao ?? \u0027\u0027,\n  idade: body.idade ?? \u0027\u0027,\n  batizado: yn(body.batizado),\n  data_batismo: body.data_batismo ?? \u0027\u0027,\n  celular: onlyDigits(body.celular),\n  email: body.email ?? \u0027\u0027,\n  polo_auxilio: body.polo_auxilio ?? \u0027\u0027,\n  musico_ou_musicista: yn(body.musico_ou_musicista),\n  oficializado: yn(body.oficializado),\n  data_oficializacao: body.data_oficializacao ?? \u0027\u0027,\n  instrutor_atualmente: yn(body.instrutor_atualmente),\n  instrutor_em_qual_igreja: body.instrutor_em_qual_igreja ?? \u0027\u0027,\n  formacao_musica: yn(body.formacao_musica),\n  formacao_qual: body.formacao_qual ?? \u0027\u0027,\n  formacao_data: body.formacao_data ?? \u0027\u0027,\n  pedagogo: yn(body.pedagogo),\n  pedagogo_desde: body.pedagogo_desde ?? \u0027\u0027,\n  atua_na_area: yn(body.atua_na_area),\n  afinidade_criancas: yn(body.afinidade_criancas),\n  cursos_conhecimentos: body.cursos_conhecimentos ?? \u0027\u0027,\n  de_acordo_voluntario: yn(body.de_acordo_voluntario),\n  autoriza_tratamento_dados: yn(body.autoriza_tratamento_dados)\n};\n\nreturn [{ json: out }];"
+                                     },
+                      "id":  "d3a09aa0-af34-44c1-8c37-54743c3ab762",
+                      "name":  "Normalizar Monitor",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -240,
+                                       160
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "append",
+                                         "documentId":  "COLE_AQUI_O_SPREADSHEET_ID",
+                                         "sheetName":  "Crianca",
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "created_at":  "={{ $json.created_at }}",
+                                                                       "tipo":  "={{ $json.tipo }}",
+                                                                       "nome_crianca":  "={{ $json.nome_crianca }}",
+                                                                       "sexo":  "={{ $json.sexo }}",
+                                                                       "data_nascimento":  "={{ $json.data_nascimento }}",
+                                                                       "data_nascimento_iso":  "={{ $json.data_nascimento_iso }}",
+                                                                       "idade":  "={{ $json.idade }}",
+                                                                       "comum_congregacao":  "={{ $json.comum_congregacao }}",
+                                                                       "nome_pai":  "={{ $json.nome_pai }}",
+                                                                       "pai_e_crente":  "={{ $json.pai_e_crente }}",
+                                                                       "nome_mae":  "={{ $json.nome_mae }}",
+                                                                       "mae_e_crente":  "={{ $json.mae_e_crente }}",
+                                                                       "pais_vivem_juntos":  "={{ $json.pais_vivem_juntos }}",
+                                                                       "crianca_vive_com_os_pais":  "={{ $json.crianca_vive_com_os_pais }}",
+                                                                       "se_nao_vive_com_pais_com_quem_vive":  "={{ $json.se_nao_vive_com_pais_com_quem_vive }}",
+                                                                       "nome_responsavel":  "={{ $json.nome_responsavel }}",
+                                                                       "celular_responsavel":  "={{ $json.celular_responsavel }}",
+                                                                       "tem_whatsapp":  "={{ $json.tem_whatsapp }}",
+                                                                       "participa_reunioes_jovens_menores":  "={{ $json.participa_reunioes_jovens_menores }}",
+                                                                       "participa_espaco_infantil":  "={{ $json.participa_espaco_infantil }}",
+                                                                       "logradouro_numero":  "={{ $json.logradouro_numero }}",
+                                                                       "complemento":  "={{ $json.complemento }}",
+                                                                       "bairro":  "={{ $json.bairro }}",
+                                                                       "cidade":  "={{ $json.cidade }}",
+                                                                       "cep":  "={{ $json.cep }}",
+                                                                       "dificuldade_aprendizagem":  "={{ $json.dificuldade_aprendizagem }}",
+                                                                       "dificuldade_descricao":  "={{ $json.dificuldade_descricao }}",
+                                                                       "faz_terapia":  "={{ $json.faz_terapia }}",
+                                                                       "terapia_especialidade":  "={{ $json.terapia_especialidade }}",
+                                                                       "uuid":  "={{ $json.uuid }}"
+                                                                   },
+                                                         "matchingColumns":  [
+
+                                                                             ],
+                                                         "schema":  [
+
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "b55a7f62-b85b-4c96-9e76-5e88bd1a14d1",
+                      "name":  "Google Sheets Crianca (Append Row)",
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4,
+                      "position":  [
+                                       80,
+                                       -140
+                                   ],
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "DmyshV2xAIHWmWOH",
+                                                                        "name":  "Google Sheets SEC"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "append",
+                                         "documentId":  "COLE_AQUI_O_SPREADSHEET_ID",
+                                         "sheetName":  "Monitores",
+                                         "columns":  {
+                                                         "mappingMode":  "defineBelow",
+                                                         "value":  {
+                                                                       "created_at":  "={{ $json.created_at }}",
+                                                                       "tipo":  "={{ $json.tipo }}",
+                                                                       "nome_completo":  "={{ $json.nome_completo }}",
+                                                                       "comum_congregacao":  "={{ $json.comum_congregacao }}",
+                                                                       "idade":  "={{ $json.idade }}",
+                                                                       "batizado":  "={{ $json.batizado }}",
+                                                                       "data_batismo":  "={{ $json.data_batismo }}",
+                                                                       "celular":  "={{ $json.celular }}",
+                                                                       "email":  "={{ $json.email }}",
+                                                                       "polo_auxilio":  "={{ $json.polo_auxilio }}",
+                                                                       "musico_ou_musicista":  "={{ $json.musico_ou_musicista }}",
+                                                                       "oficializado":  "={{ $json.oficializado }}",
+                                                                       "data_oficializacao":  "={{ $json.data_oficializacao }}",
+                                                                       "instrutor_atualmente":  "={{ $json.instrutor_atualmente }}",
+                                                                       "instrutor_em_qual_igreja":  "={{ $json.instrutor_em_qual_igreja }}",
+                                                                       "formacao_musica":  "={{ $json.formacao_musica }}",
+                                                                       "formacao_qual":  "={{ $json.formacao_qual }}",
+                                                                       "formacao_data":  "={{ $json.formacao_data }}",
+                                                                       "pedagogo":  "={{ $json.pedagogo }}",
+                                                                       "pedagogo_desde":  "={{ $json.pedagogo_desde }}",
+                                                                       "atua_na_area":  "={{ $json.atua_na_area }}",
+                                                                       "afinidade_criancas":  "={{ $json.afinidade_criancas }}",
+                                                                       "cursos_conhecimentos":  "={{ $json.cursos_conhecimentos }}",
+                                                                       "de_acordo_voluntario":  "={{ $json.de_acordo_voluntario }}",
+                                                                       "autoriza_tratamento_dados":  "={{ $json.autoriza_tratamento_dados }}",
+                                                                       "uuid":  "={{ $json.uuid }}"
+                                                                   },
+                                                         "matchingColumns":  [
+
+                                                                             ],
+                                                         "schema":  [
+
+                                                                    ],
+                                                         "attemptToConvertTypes":  false,
+                                                         "convertFieldsToString":  false
+                                                     },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "2a9ca6d0-b142-4a2d-b9e8-bd2f4dd0ad28",
+                      "name":  "Google Sheets Monitores (Append Row)",
+                      "type":  "n8n-nodes-base.googleSheets",
+                      "typeVersion":  4,
+                      "position":  [
+                                       80,
+                                       160
+                                   ],
+                      "credentials":  {
+                                          "googleSheetsOAuth2Api":  {
+                                                                        "id":  "DmyshV2xAIHWmWOH",
+                                                                        "name":  "Google Sheets SEC"
+                                                                    }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://SEU-PROJETO.supabase.co/rest/v1/musicalizacao_criancas",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "SEU_SUPABASE_SERVICE_ROLE_KEY"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer SEU_SUPABASE_SERVICE_ROLE_KEY"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Prefer",
+                                                                                         "value":  "return=minimal"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ ({ created_at: $json.created_at, tipo: $json.tipo, nome_crianca: $json.nome_crianca, sexo: $json.sexo, data_nascimento: $json.data_nascimento, comum_congregacao: $json.comum_congregacao, nome_pai: $json.nome_pai, pai_e_crente: $json.pai_e_crente, nome_mae: $json.nome_mae, mae_e_crente: $json.mae_e_crente, pais_vivem_juntos: $json.pais_vivem_juntos, crianca_vive_com_os_pais: $json.crianca_vive_com_os_pais, se_nao_vive_com_pais_com_quem_vive: $json.se_nao_vive_com_pais_com_quem_vive, nome_responsavel: $json.nome_responsavel, celular_responsavel: $json.celular_responsavel, tem_whatsapp: $json.tem_whatsapp, participa_reunioes_jovens_menores: $json.participa_reunioes_jovens_menores, participa_espaco_infantil: $json.participa_espaco_infantil, logradouro_numero: $json.logradouro_numero, complemento: $json.complemento, bairro: $json.bairro, cidade: $json.cidade, cep: $json.cep, dificuldade_aprendizagem: $json.dificuldade_aprendizagem, dificuldade_descricao: $json.dificuldade_descricao, faz_terapia: $json.faz_terapia, terapia_especialidade: $json.terapia_especialidade }) }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "6f27e4ad-0f74-44d0-b687-41e81de9a4a1",
+                      "name":  "Supabase Criancas (Insert)",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       380,
+                                       -140
+                                   ],
+                      "continueOnFail":  true
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://SEU-PROJETO.supabase.co/rest/v1/musicalizacao_monitores",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "SEU_SUPABASE_SERVICE_ROLE_KEY"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer SEU_SUPABASE_SERVICE_ROLE_KEY"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Prefer",
+                                                                                         "value":  "return=minimal"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ ({ created_at: $json.created_at, tipo: $json.tipo, nome_completo: $json.nome_completo, comum_congregacao: $json.comum_congregacao, idade: $json.idade, batizado: $json.batizado, data_batismo: $json.data_batismo, celular: $json.celular, email: $json.email, polo_auxilio: $json.polo_auxilio, musico_ou_musicista: $json.musico_ou_musicista, oficializado: $json.oficializado, data_oficializacao: $json.data_oficializacao, instrutor_atualmente: $json.instrutor_atualmente, instrutor_em_qual_igreja: $json.instrutor_em_qual_igreja, formacao_musica: $json.formacao_musica, formacao_qual: $json.formacao_qual, formacao_data: $json.formacao_data, pedagogo: $json.pedagogo, pedagogo_desde: $json.pedagogo_desde, atua_na_area: $json.atua_na_area, afinidade_criancas: $json.afinidade_criancas, cursos_conhecimentos: $json.cursos_conhecimentos, de_acordo_voluntario: $json.de_acordo_voluntario, autoriza_tratamento_dados: $json.autoriza_tratamento_dados }) }}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "98bf9a0f-cec4-49b8-a4ec-330cd5a7af55",
+                      "name":  "Supabase Monitores (Insert)",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       380,
+                                       160
+                                   ],
+                      "continueOnFail":  true
+                  }
+              ],
+    "pinData":  {
+
+                },
+    "connections":  {
+                        "Webhook":  {
+                                        "main":  [
+                                                     [
+                                                         {
+                                                             "node":  "Switch Tipo",
+                                                             "type":  "main",
+                                                             "index":  0
+                                                         }
+                                                     ]
+                                                 ]
+                                    },
+                        "Switch Tipo":  {
+                                            "main":  [
+                                                         [
+                                                             {
+                                                                 "node":  "Normalizar Crianca",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ],
+                                                         [
+                                                             {
+                                                                 "node":  "Normalizar Monitor",
+                                                                 "type":  "main",
+                                                                 "index":  0
+                                                             }
+                                                         ]
+                                                     ]
+                                        },
+                        "Normalizar Crianca":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Google Sheets Crianca (Append Row)",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Normalizar Monitor":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Google Sheets Monitores (Append Row)",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "Google Sheets Crianca (Append Row)":  {
+                                                                   "main":  [
+                                                                                [
+                                                                                    {
+                                                                                        "node":  "Supabase Criancas (Insert)",
+                                                                                        "type":  "main",
+                                                                                        "index":  0
+                                                                                    }
+                                                                                ]
+                                                                            ]
+                                                               },
+                        "Google Sheets Monitores (Append Row)":  {
+                                                                     "main":  [
+                                                                                  [
+                                                                                      {
+                                                                                          "node":  "Supabase Monitores (Insert)",
+                                                                                          "type":  "main",
+                                                                                          "index":  0
+                                                                                      }
+                                                                                  ]
+                                                                              ]
+                                                                 },
+                        "Supabase Criancas (Insert)":  {
+                                                           "main":  [
+                                                                        [
+
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Supabase Monitores (Insert)":  {
+                                                            "main":  [
+                                                                         [
+
+                                                                         ]
+                                                                     ]
+                                                        }
+                    },
+    "active":  false,
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "versionId":  "f3a2b7d3-0a3f-4ab6-920b-2e2f0ce667dd",
+    "meta":  {
+                 "templateCredsSetupCompleted":  true
+             },
+    "tags":  [
+
+             ]
+}
