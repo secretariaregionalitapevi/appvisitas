@@ -31,6 +31,12 @@ body {
   padding: 20px;
 }
 
+@media (max-width: 480px) {
+  .auth-wrap {
+    padding: 10px; /* Reduced to make the card wider on small screens */
+  }
+}
+
 .card {
   width: min(580px, 100%);
   background: var(--panel);
@@ -222,69 +228,6 @@ textarea:focus {
   gap: 16px;
 }
 
-/* Grid customizado para Visitas (5 indicadores + Total) */
-.grid-visits-5 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  width: 100%;
-}
-
-.grid-visits-5 .total-box-visits {
-  grid-column: 1 / -1;
-  margin-top: 20px;
-  width: 100%;
-}
-
-/* Telas Médias e Desktop */
-@media (min-width: 480px) {
-  .grid-visits-5 {
-    grid-template-columns: repeat(6, 1fr);
-  }
-  
-  /* GVI, GVM, GVMU -> 3 colunas (2 cada de 6) */
-  .grid-visits-5 .form-group:nth-child(1),
-  .grid-visits-5 .form-group:nth-child(2),
-  .grid-visits-5 .form-group:nth-child(3) {
-    grid-column: span 2;
-  }
-  
-  /* RF, RE -> 2 colunas (3 cada de 6) */
-  .grid-visits-5 .form-group:nth-child(4),
-  .grid-visits-5 .form-group:nth-child(5) {
-    grid-column: span 3;
-  }
-}
-
-/* Em telas muito grandes, podemos manter o mesmo ou ir para 5 em linha */
-@media (min-width: 900px) {
-  .grid-visits-5 {
-    grid-template-columns: repeat(5, 1fr);
-  }
-  .grid-visits-5 .form-group {
-    grid-column: span 1 !important;
-  }
-  .grid-visits-5 .total-box-visits {
-    grid-column: span 5;
-    margin-top: 24px;
-  }
-}
-
-/* Ajustes gerais de box de total */
-.total-box-visits {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line);
-  text-align: center;
-}
-
-.total-box-visits label {
-  color: var(--brand);
-  font-weight: 700;
-  display: block;
-  margin-bottom: 5px;
-}
-
 @media (max-width: 600px) {
   .grid-btns {
     grid-template-columns: 1fr;
@@ -377,7 +320,7 @@ textarea:focus {
 }
 
 .auth-wrap {
-  /* No extra padding needed as it's flexed below nav */
+  /* No extra padding-top needed as it's flexed bellow nav */
 }
 
 .header-icon {
@@ -391,7 +334,7 @@ textarea:focus {
 /* --- HYBRID MOCIDADE THEME (Blue Header + SAC Inputs) --- */
 
 .sac-card {
-  width: min(500px, 95%);
+  width: min(500px, 98%); /* Increased from 95% */
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
@@ -415,17 +358,21 @@ textarea:focus {
 
 @media (max-width: 480px) {
   .sac-header {
-    padding: 30px 20px;
+    padding: 24px 15px; /* Reduced padding */
   }
   .sac-logo {
-    max-width: 140px;
+    max-width: 160px; /* Increased from 120px for better visibility */
     margin-bottom: 12px;
   }
   .sac-title {
     font-size: 22px;
+    line-height: 1.2;
   }
   .sac-subtitle {
     font-size: 14px;
+    line-height: 1.4;
+    max-width: 250px;
+    margin: 0 auto;
   }
 }
 
@@ -450,7 +397,7 @@ textarea:focus {
 
 @media (max-width: 480px) {
   .sac-body {
-    padding: 20px;
+    padding: 15px; /* Reduced from 20px */
   }
 }
 
@@ -542,32 +489,38 @@ textarea:focus {
 
 .sac-btn {
   width: 100%;
-  height: 48px; /* Reduced from 54px */
-  background: #1e4b7a;
+  height: 38px;
+  background: var(--brand);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 15px; /* Slight reduction */
-  font-weight: 700;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   margin-top: 20px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sac-btn:hover {
   background: #15355a;
-  box-shadow: 0 4px 10px rgba(30, 75, 122, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(30, 75, 122, 0.2);
+}
+
+.sac-btn:active {
+  transform: scale(0.98);
 }
 
 .sac-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .sac-footer-links {
@@ -590,16 +543,46 @@ textarea:focus {
 }
 
 .sac-page-footer {
-  margin-top: 30px;
+  margin-top: 40px;
   text-align: center;
-  font-size: 11px; /* Smaller footer */
-  color: #94a3b8;
-  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+  padding-bottom: 30px;
 }
 
 .sac-page-footer a {
-  color: #64748b;
   text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.sac-page-footer a:hover {
+  opacity: 0.7;
+}
+
+.sac-page-footer .footer-brand {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.sac-page-footer .footer-ccb {
+  display: block;
+  font-size: 13px;
+  color: #1e4b7a;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.sac-page-footer .footer-region {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .password-toggle {
@@ -680,4 +663,29 @@ textarea:focus {
 
 .sac-search-item strong {
   color: #1e3a5a;
+}
+
+/* --- Estados Bloqueados (Lock) --- */
+.is-locked {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.9;
+}
+
+.is-locked input {
+  background-color: transparent !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  font-weight: 600;
+}
+
+.is-locked .input-icon-box {
+  background-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.is-locked .password-toggle,
+.is-locked .sac-search-results {
+  display: none !important;
 }

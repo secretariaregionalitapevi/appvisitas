@@ -1,8 +1,14 @@
-﻿document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const config = JSON.parse(sessionStorage.getItem('visitas_config'));
   if (!config) {
     window.location.href = '/';
     return;
+  }
+
+  // Dinamizar Subtítulo
+  if (config.comum) {
+    const hSubtitle = document.getElementById('headerSubtitle');
+    if (hSubtitle) hSubtitle.innerHTML = `Acompanhamento Regional<br>${config.comum}`;
   }
 
   const container = document.getElementById('cardsContainer');
