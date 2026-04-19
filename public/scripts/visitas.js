@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     try {
-      const res = await fetch('/api/visitas', {
+      const res = await window.authFetch('/api/visitas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -49,6 +49,22 @@ window.checkAuth = async () => {
   return user;
 };
 
+window.authFetch = async (url, options = {}) => {
+  if (!supabaseClient) await initSupabase();
+
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const token = session?.access_token;
+  const headers = {
+    ...options.headers
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return fetch(url, { ...options, headers });
+};
+
 const errorTranslations = {
   'Invalid login credentials': 'E-mail ou senha incorretos.',
   'Email not confirmed': 'E-mail nao confirmado. Verifique sua caixa de entrada.',
@@ -115,7 +131,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!supabaseClient) await initSupabase();
 
       // 1. Criar usuario no Auth
-      const { error: authError } = await supabaseClient.auth.signUp({
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -132,7 +148,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Perfil agora e gerenciado apenas via User Metadata do Supabase
+      try {
+        await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: authData?.user?.id,
+            full_name: fullName,
+            email,
+            comum,
+            cidade
+          })
+        });
+      } catch (profileError) {
+        console.error('Falha ao salvar perfil complementar:', profileError);
+      }
+
       Swal.fire({
         title: 'Conta Criada!',
         text: 'Sua conta foi criada com sucesso. Faca login para continuar.',

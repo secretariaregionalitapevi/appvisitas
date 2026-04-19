@@ -1,4 +1,4 @@
-﻿const http = require("http");
+const http = require("http");
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
@@ -177,6 +177,64 @@ function normalizeDate(value) {
   if (dash) return raw;
 
   return normalizeText(raw);
+}
+
+async function verifySupabaseToken(authHeader) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+  const token = authHeader.split(" ")[1];
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("SUPABASE_URL ou SUPABASE_ANON_KEY ausentes para validar token.");
+    return null;
+  }
+
+  try {
+    const url = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/auth/v1/user`);
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (err) {
+    console.error("Erro ao validar token do Supabase:", err);
+    return null;
+  }
+}
+
+async function getUserProfile(userId) {
+  if (!userId || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
+
+  const table = process.env.SUPABASE_TABLE_AUXILIARES || "profiles";
+  const primaryUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?id=eq.${userId}&select=*`);
+
+  try {
+    const response = await fetch(primaryUrl, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+      }
+    });
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) return data[0];
+
+    const legacyUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?user_id=eq.${userId}&select=*`);
+    const legacyResponse = await fetch(legacyUrl, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+      }
+    });
+    const legacyData = await legacyResponse.json();
+    return Array.isArray(legacyData) && legacyData.length > 0 ? legacyData[0] : null;
+  } catch (err) {
+    console.error("Erro ao buscar perfil do usuario:", err);
+    return null;
+  }
 }
 
 function nameTokens(value) {
@@ -495,6 +553,52 @@ async function handleRequest(req, res) {
   const pathname = url.pathname;
 
   try {
+    if (pathname === "/api/profile") {
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        return sendJson(res, 500, { error: "Configuracao do Supabase ausente." });
+      }
+
+      const table = process.env.SUPABASE_TABLE_AUXILIARES || "profiles";
+
+      if (req.method === "GET") {
+        const userId = url.searchParams.get("id");
+        if (!userId) return sendJson(res, 400, { error: "ID do usuario ausente." });
+
+        const profile = await getUserProfile(userId);
+        return sendJson(res, 200, profile || {});
+      }
+
+      if (req.method === "POST") {
+        const profileData = await readJsonBody(req);
+        if (!profileData.id) {
+          return sendJson(res, 400, { error: "ID do usuario obrigatorio." });
+        }
+
+        const upsertUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}`);
+        const response = await fetch(upsertUrl, {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates"
+          },
+          body: JSON.stringify(profileData)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Erro ao salvar perfil no Supabase:", errorText);
+          return sendJson(res, response.status, {
+            error: "Erro ao salvar perfil no Supabase.",
+            details: errorText
+          });
+        }
+
+        return sendJson(res, 200, { success: true });
+      }
+    }
+
     if (req.method === "GET") {
       const page = routeToPage(pathname);
       if (page) {
@@ -502,8 +606,12 @@ async function handleRequest(req, res) {
         return;
       }
 
-      if (pathname.startsWith("/styles/") || pathname.startsWith("/scripts/") || pathname.startsWith("/assets/")) {
-        await serveStatic(pathname.slice(1), res);
+      // Tenta servir qualquer arquivo da pasta public se ele existir (ex: manifest.json, sw.js, ícones na raiz)
+      const relativePath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+      const fullPath = path.join(publicDir, relativePath);
+      
+      if (fs.existsSync(fullPath) && !fs.statSync(fullPath).isDirectory()) {
+        await serveStatic(relativePath, res);
         return;
       }
 
@@ -567,6 +675,24 @@ async function handleRequest(req, res) {
 
       if (!supabaseUrl || !supabaseKey) {
         return sendJson(res, 500, { error: "Configuracao do Supabase ausente." });
+      }
+
+      const authUser = await verifySupabaseToken(req.headers.authorization);
+      if (!authUser) {
+        return sendJson(res, 401, { error: "Nao autorizado. Faca login novamente." });
+      }
+
+      const profile = await getUserProfile(authUser.id);
+      if (profile && profile.comum) {
+        const payloadComum = normalizeText(payload.comum);
+        const profileComum = normalizeText(profile.comum);
+
+        if (payloadComum !== profileComum) {
+          console.warn(`Tentativa de enviar visitas para comum diferente. Usuario ${authUser.email} tentou ${payloadComum}, mas pertence a ${profileComum}`);
+          return sendJson(res, 403, {
+            error: "Acao bloqueada: voce so pode lancar para a sua propria comum."
+          });
+        }
       }
 
       try {
