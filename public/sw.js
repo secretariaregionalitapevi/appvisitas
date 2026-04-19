@@ -1,14 +1,17 @@
-// Force SW update for visual fix v2.0.0 - Robust PWA Model
-const CACHE_NAME = 'visitas-v2.0.0';
-const RUNTIME_CACHE = 'runtime-cache-v2.0.0';
+// Force SW update for icon and manifest refresh v2.0.3
+const CACHE_NAME = 'visitas-v2.0.3';
+const RUNTIME_CACHE = 'runtime-cache-v2.0.3';
 
 // Recursos essenciais para o primeiro carregamento (Shell do App)
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/login.html',
-  '/manifest.json?v=2',
-  '/icon.png?v=2',
+  '/manifest.json?v=4',
+  '/icon-512.png?v=4',
+  '/icons/icon-192.png?v=4',
+  '/icons/icon-180.png?v=4',
+  '/favicon.png?v=4',
   '/styles/main.css'
 ];
 

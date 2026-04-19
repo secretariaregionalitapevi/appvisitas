@@ -4,7 +4,7 @@ window.togglePassword = (id) => {
   const input = document.getElementById(id);
   const container = input.closest('.form-group');
   const toggle = container.querySelector('.password-toggle');
-  
+
   if (input.type === 'password') {
     input.type = 'text';
     // Mudar para olho fechado (eye-off)
@@ -20,22 +20,24 @@ window.initSupabase = async () => {
   try {
     const res = await fetch('/api/config');
     const config = await res.json();
-    // Atribui ao escopo global para outros scripts usarem se necessário
+
+    // Atribui ao escopo global para outros scripts usarem se necessario
     window.supabaseClient = supabase.createClient(config.url, config.anonKey, {
       auth: {
         persistSession: true,
-        storage: window.sessionStorage // Sessão morre quando fecha a aba/navegador
+        storage: window.sessionStorage // Sessao morre quando fecha a aba/navegador
       }
     });
+
     supabaseClient = window.supabaseClient;
   } catch (err) {
     console.error('Falha ao inicializar Supabase:', err);
   }
-}
+};
 
 window.checkAuth = async () => {
   if (!supabaseClient) await initSupabase();
-  
+
   const { data: { session } } = await supabaseClient.auth.getSession();
   const user = session?.user;
 
@@ -43,17 +45,17 @@ window.checkAuth = async () => {
     window.location.href = '/login.html';
     return null;
   }
-  
+
   return user;
 };
 
 const errorTranslations = {
   'Invalid login credentials': 'E-mail ou senha incorretos.',
-  'Email not confirmed': 'E-mail não confirmado. Verifique sua caixa de entrada.',
-  'User already registered': 'Este e-mail já está cadastrado.',
+  'Email not confirmed': 'E-mail nao confirmado. Verifique sua caixa de entrada.',
+  'User already registered': 'Este e-mail ja esta cadastrado.',
   'Password should be at least 6 characters': 'A senha deve ter pelo menos 6 caracteres.',
   'Email rate limit exceeded': 'Muitas tentativas. Tente novamente em alguns minutos.',
-  'Signup disabled': 'O cadastro está temporariamente desativado.',
+  'Signup disabled': 'O cadastro esta temporariamente desativado.'
 };
 
 function translateError(msg) {
@@ -63,7 +65,7 @@ function translateError(msg) {
   return msg;
 }
 
-// Lógica para os formulários de login e registro
+// Logica para os formularios de login e registro
 document.addEventListener('DOMContentLoaded', async () => {
   const loginForm = document.getElementById('loginForm');
   const registerForm = document.getElementById('registerForm');
@@ -75,16 +77,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const email = e.target.email.value;
       const password = e.target.password.value;
       const feedback = document.getElementById('loginFeedback');
-      
+
       if (feedback) feedback.textContent = 'Autenticando...';
       if (!supabaseClient) await initSupabase();
-      
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
       if (error) {
         if (feedback) feedback.textContent = 'Erro: ' + translateError(error.message);
       } else {
-        // Limpar apenas configurações específicas de dados, mas NÃO a sessão do Supabase
+        // Limpar apenas configuracoes especificas de dados, mas NAO a sessao do Supabase
         sessionStorage.removeItem('visitas_config');
         sessionStorage.removeItem('recitativos_config');
         window.location.href = '/';
@@ -105,15 +107,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const feedback = document.getElementById('registerFeedback');
 
       if (password !== confirmPassword) {
-        if (feedback) feedback.textContent = 'As senhas não coincidem.';
+        if (feedback) feedback.textContent = 'As senhas nao coincidem.';
         return;
       }
 
       if (feedback) feedback.textContent = 'Criando conta...';
       if (!supabaseClient) await initSupabase();
 
-      // 1. Criar usuário no Auth
-      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+      // 1. Criar usuario no Auth
+      const { error: authError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -130,10 +132,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Perfil agora é gerenciado apenas via User Metadata do Supabase
+      // Perfil agora e gerenciado apenas via User Metadata do Supabase
       Swal.fire({
         title: 'Conta Criada!',
-        text: 'Sua conta foi criada com sucesso. Faça login para continuar.',
+        text: 'Sua conta foi criada com sucesso. Faca login para continuar.',
         icon: 'success',
         confirmButtonColor: '#003049'
       }).then(() => {
@@ -146,38 +148,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// Registro agressivo do Service Worker para PWA (Modelo de SUCESSO APP_EnR)
+// Registro agressivo do Service Worker para PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then((registration) => {
-      console.log('✅ ServiceWorker registrado com sucesso:', registration.scope);
+    navigator.serviceWorker.register('/sw.js?v=4').then((registration) => {
+      console.log('ServiceWorker registrado com sucesso:', registration.scope);
 
-      // Forçar verificação imediata no carregamento inicial
+      // Forcar verificacao imediata no carregamento inicial
       registration.update();
 
-      // Detecta quando uma nova versão do SW for encontrada
+      // Detecta quando uma nova versao do SW for encontrada
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
-            // Se a nova versão foi instalada e já existe um SW controlando a página (ou seja, é uma atualização)
+            // Se a nova versao foi instalada e ja existe um SW controlando a pagina
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('🔄 Nova versão encontrada e instalada. Forçando ativação agressiva...');
+              console.log('Nova versao encontrada e instalada. Forcando ativacao agressiva...');
               newWorker.postMessage({ type: 'SKIP_WAITING' });
             }
           });
         }
       });
     }).catch((err) => {
-      console.error('❌ Registro do ServiceWorker falhou:', err);
+      console.error('Registro do ServiceWorker falhou:', err);
     });
 
-    // Forçar reload da página instantaneamente assim que o novo Service Worker assumir o controle
+    // Forcar reload da pagina quando o novo Service Worker assumir o controle
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
-        console.log('🔄 Novo cache ativado! Recarregando a aplicação...');
+        console.log('Novo cache ativado. Recarregando a aplicacao...');
         window.location.reload();
       }
     });

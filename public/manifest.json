@@ -2,7 +2,7 @@
   "name": "CCB Visitas",
   "short_name": "CCB Visitas",
   "description": "Controle de Visitas - Regional Itapevi",
-  "start_url": "/?source=pwa",
+  "start_url": "/?source=pwa-v4",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -10,52 +10,58 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/icons/icon-72.png",
+      "src": "/icons/icon-72.png?v=4",
       "sizes": "72x72",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-96.png",
+      "src": "/icons/icon-96.png?v=4",
       "sizes": "96x96",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-128.png",
+      "src": "/icons/icon-128.png?v=4",
       "sizes": "128x128",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-144.png",
+      "src": "/icons/icon-144.png?v=4",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-152.png",
+      "src": "/icons/icon-152.png?v=4",
       "sizes": "152x152",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-180.png",
+      "src": "/icons/icon-180.png?v=4",
       "sizes": "180x180",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-192.png",
+      "src": "/icons/icon-192.png?v=4",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-384.png",
+      "src": "/icons/icon-384.png?v=4",
       "sizes": "384x384",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/icon-512.png?v=4",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": [
