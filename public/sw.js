@@ -1,6 +1,6 @@
-// Force SW update for icon and manifest refresh v2.0.3
-const CACHE_NAME = 'visitas-v2.0.3';
-const RUNTIME_CACHE = 'runtime-cache-v2.0.3';
+// Force SW update for icon and manifest refresh v2.0.4
+const CACHE_NAME = 'visitas-v2.0.4';
+const RUNTIME_CACHE = 'runtime-cache-v2.0.4';
 
 // Recursos essenciais para o primeiro carregamento (Shell do App)
 const PRECACHE_ASSETS = [
