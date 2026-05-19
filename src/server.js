@@ -206,35 +206,51 @@ async function verifySupabaseToken(authHeader) {
   }
 }
 
-async function getUserProfile(userId) {
+async function getUserProfile(userId, email = null) {
   if (!userId || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return null;
 
-  const table = process.env.SUPABASE_TABLE_AUXILIARES || "profiles";
-  const primaryUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?id=eq.${userId}&select=*`);
+  const auxTable = process.env.SUPABASE_TABLE_AUXILIARES || "profiles";
+  const tables = [...new Set(["profiles", auxTable])];
 
-  try {
-    const response = await fetch(primaryUrl, {
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+  for (const table of tables) {
+    try {
+      // 1. Tenta buscar por 'id'
+      const urlId = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?id=eq.${userId}&select=*`);
+      const resId = await fetch(urlId, {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+      });
+      if (resId.ok) {
+        const dataId = await resId.json();
+        if (Array.isArray(dataId) && dataId.length > 0) return dataId[0];
       }
-    });
-    const data = await response.json();
-    if (Array.isArray(data) && data.length > 0) return data[0];
 
-    const legacyUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?user_id=eq.${userId}&select=*`);
-    const legacyResponse = await fetch(legacyUrl, {
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+      // 2. Tenta buscar por 'user_id'
+      const urlUserId = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?user_id=eq.${userId}&select=*`);
+      const resUserId = await fetch(urlUserId, {
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+      });
+      if (resUserId.ok) {
+        const dataUserId = await resUserId.json();
+        if (Array.isArray(dataUserId) && dataUserId.length > 0) return dataUserId[0];
       }
-    });
-    const legacyData = await legacyResponse.json();
-    return Array.isArray(legacyData) && legacyData.length > 0 ? legacyData[0] : null;
-  } catch (err) {
-    console.error("Erro ao buscar perfil do usuario:", err);
-    return null;
+
+      // 3. Tenta buscar por 'email'
+      if (email) {
+        const urlEmail = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/${table}?email=eq.${email}&select=*`);
+        const resEmail = await fetch(urlEmail, {
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+        });
+        if (resEmail.ok) {
+          const dataEmail = await resEmail.json();
+          if (Array.isArray(dataEmail) && dataEmail.length > 0) return dataEmail[0];
+        }
+      }
+    } catch (err) {
+      console.warn(`Erro ao buscar perfil na tabela ${table}:`, err.message);
+    }
   }
+
+  return null;
 }
 
 function nameTokens(value) {
@@ -562,9 +578,10 @@ async function handleRequest(req, res) {
 
       if (req.method === "GET") {
         const userId = url.searchParams.get("id");
+        const userEmail = url.searchParams.get("email");
         if (!userId) return sendJson(res, 400, { error: "ID do usuario ausente." });
 
-        const profile = await getUserProfile(userId);
+        const profile = await getUserProfile(userId, userEmail);
         return sendJson(res, 200, profile || {});
       }
 
@@ -679,18 +696,32 @@ async function handleRequest(req, res) {
 
       const authUser = await verifySupabaseToken(req.headers.authorization);
       if (!authUser) {
-        return sendJson(res, 401, { error: "Nao autorizado. Faca login novamente." });
+        return sendJson(res, 401, { error: "Não autorizado. Faça login novamente." });
       }
 
       const profile = await getUserProfile(authUser.id);
-      if (profile && profile.comum) {
+      if (!profile) {
+        return sendJson(res, 403, { error: "Acesso negado: Perfil de usuário não encontrado." });
+      }
+
+      // Check role authorization for Visitas (Allowed: Master/1, Admin/2, Coordenador/3, Instrutor/4, Candidato/6)
+      const allowedRoles = [1, 2, 3, 4, 6];
+      const userRoleId = parseInt(profile.role_id || profile.nivel || 0, 10);
+      if (!allowedRoles.includes(userRoleId)) {
+        return sendJson(res, 403, { 
+          error: "Acesso negado: seu nível de acesso não permite fazer lançamentos nesta aplicação.",
+          role_id: userRoleId
+        });
+      }
+
+      if (profile.comum) {
         const payloadComum = normalizeText(payload.comum);
         const profileComum = normalizeText(profile.comum);
 
         if (payloadComum !== profileComum) {
           console.warn(`Tentativa de enviar visitas para comum diferente. Usuario ${authUser.email} tentou ${payloadComum}, mas pertence a ${profileComum}`);
           return sendJson(res, 403, {
-            error: "Acao bloqueada: voce so pode lancar para a sua propria comum."
+            error: "Ação bloqueada: você só pode lançar para a sua própria comum."
           });
         }
       }

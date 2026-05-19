@@ -21,13 +21,86 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/scripts/auth.js?v=1.0.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body.login-page {
+      background: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .login-page .auth-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 0;
+    }
+
+    .login-page .sac-card {
+      width: min(560px, 100%);
+    }
+
+    @media (max-width: 640px) {
+      body.login-page {
+        padding: 8px;
+      }
+
+      .login-page .sac-card {
+        width: 100%;
+        max-width: none;
+        border-radius: 14px;
+      }
+
+      .login-page .sac-header {
+        padding: 28px 20px;
+      }
+
+      .login-page .sac-body {
+        padding: 24px 20px 28px;
+      }
+
+      .login-page .sac-form .form-group {
+        min-height: 56px;
+      }
+
+      .login-page .sac-form .input-icon-box,
+      .login-page .password-toggle {
+        width: 54px;
+        min-width: 54px;
+      }
+
+      .login-page .sac-form input,
+      .login-page .sac-form select {
+        height: 56px;
+        font-size: 16px;
+        padding: 0 16px !important;
+      }
+
+      .login-page .sac-btn {
+        height: 52px;
+        font-size: 15px;
+        border-radius: 12px;
+        margin-top: 24px;
+      }
+
+      .login-page .sac-footer-links {
+        margin-top: 24px;
+      }
+
+      .login-page .sac-page-footer {
+        margin-top: 24px;
+        padding-bottom: 20px;
+      }
+    }
+  </style>
 </head>
 
-<body
-  style="background: #f1f5f9; display: flex; flex-direction: column; align-items: center; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<body class="login-page">
 
-  <main class="auth-wrap"
-    style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+  <main class="auth-wrap">
     <div class="sac-card">
       <div class="sac-header">
         <img src="/assets/logo-ccb.png?v=4" alt="CCB" class="sac-logo" />

@@ -151,9 +151,40 @@
           const userEmail = window.currentUser.email || '';
           console.log(`Buscando perfil para ID: ${window.currentUser.id} e Email: ${userEmail}`);
 
-          const profileRes = await fetch(`/api/profile?id=${window.currentUser.id}&email=${encodeURIComponent(userEmail)}`);
+          const profileRes = await window.authFetch(`/api/profile?id=${window.currentUser.id}&email=${encodeURIComponent(userEmail)}`);
           let profile = await profileRes.json();
           console.log('Dados do perfil recebidos:', profile);
+
+          // Verificação de permissão baseada em nível/cargo para Visitas
+          const allowedRoles = [1, 2, 3, 4, 6];
+          const userRoleId = parseInt(profile.role_id || profile.nivel || 0, 10);
+          if (!allowedRoles.includes(userRoleId)) {
+            document.getElementById('mes').disabled = true;
+            document.getElementById('comumSearch').disabled = true;
+            const btnProsseguir = document.getElementById('btnProsseguir');
+            if (btnProsseguir) {
+              btnProsseguir.disabled = true;
+              btnProsseguir.style.opacity = '0.5';
+              btnProsseguir.style.cursor = 'not-allowed';
+              btnProsseguir.onclick = null;
+            }
+
+            Swal.fire({
+              title: 'Acesso Restrito',
+              html: `<div style="text-align: left; font-size: 14px; line-height: 1.6; color: #475569;">
+                      <p style="margin-bottom: 12px;">Olá, <strong>${profile.full_name || 'Usuário'}</strong>!</p>
+                      <p style="margin-bottom: 12px;">Seu nível de acesso atual (<strong>${profile.cargo || 'Não especificado'}</strong>) não possui permissão para acessar o aplicativo de Visitas.</p>
+                      <p style="margin-bottom: 12px; font-weight: 600; color: #b91c1c;">⚠️ Lançamentos nesta seção são permitidos apenas para a equipe autorizada regional.</p>
+                      <p style="margin-top: 15px; font-size: 13px; color: #64748b;">Se você acredita que isso é um erro, entre em contato com o Secretário Regional da Música.</p>
+                     </div>`,
+              icon: 'warning',
+              showConfirmButton: false,
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdrop: `rgba(15, 23, 42, 0.85)`
+            });
+          }
 
           // Fallback para metadata do usuario se o perfil no banco estiver vazio
           if ((!profile || !profile.comum) && window.currentUser.user_metadata) {

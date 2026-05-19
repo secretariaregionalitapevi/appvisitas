@@ -1,6 +1,6 @@
 # App Cadastro MI
 
-Aplicação web em Node.js para cadastro de **Criança** e **Monitor** da Musicalização Infantil.
+Aplicação web em Node.js para cadastro de **Visitas**. 
 
 ## Funcionalidades
 - Tela inicial com seleção de tipo de cadastro.

@@ -210,7 +210,8 @@ if ('serviceWorker' in navigator) {
     // Forcar reload da pagina quando o novo Service Worker assumir o controle
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing) {
+      if (refreshing) return;
+      if (navigator.serviceWorker.controller) {
         refreshing = true;
         console.log('Novo cache ativado. Recarregando a aplicacao...');
         window.location.reload();
