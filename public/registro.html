@@ -84,6 +84,12 @@
 
           <p id="registerFeedback" style="color: var(--err); font-size: 14px; min-height: 20px;"></p>
 
+        <div style="display: flex; align-items: flex-start; gap: 12px; margin-top: 20px; margin-bottom: 25px; padding: 14px 16px; background-color: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+          <input type="checkbox" id="consent" name="consent" required style="appearance: auto; -webkit-appearance: auto; cursor: pointer; width: 20px !important; height: 20px !important; flex: none !important; accent-color: #1e4b7a; margin-top: 1px;" />
+          <label for="consent" style="font-size: 14px; font-weight: 500; color: #1e3a8a; line-height: 1.5; cursor: pointer; text-align: left; margin: 0; text-transform: none; letter-spacing: normal;">
+            Eu li e concordo com a <a href="privacidade.html" target="_blank" style="color: #1e4b7a; text-decoration: underline; font-weight: 700;">Política de Privacidade</a> e autorizo o tratamento dos meus dados.
+          </label>
+        </div>
           <button type="submit" class="sac-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             CRIAR CONTA
@@ -135,6 +141,23 @@
         comumSearch.addEventListener('focus', () => {
           if (comumSearch.value === '') renderResults('');
           comumResults.classList.add('active');
+        });
+
+        comumSearch.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstItem = comumResults.querySelector('.sac-search-item');
+            if (firstItem && comumResults.classList.contains('active')) {
+              const val = firstItem.dataset.value;
+              const cidade = firstItem.dataset.cidade;
+              comumInput.value = val;
+              comumSearch.value = val;
+              if (document.getElementById('cidadeSelect')) {
+                document.getElementById('cidadeSelect').value = cidade || '';
+              }
+              comumResults.classList.remove('active');
+            }
+          }
         });
 
         comumResults.addEventListener('mousedown', (e) => {
