@@ -1,6 +1,6 @@
-// Force SW update for icon and manifest refresh v2.0.4
-const CACHE_NAME = 'visitas-v2.0.4';
-const RUNTIME_CACHE = 'runtime-cache-v2.0.4';
+// Force SW update for Supabase-only submission flow v2.0.6
+const CACHE_NAME = 'visitas-v2.0.6';
+const RUNTIME_CACHE = 'runtime-cache-v2.0.6';
 
 // Recursos essenciais para o primeiro carregamento (Shell do App)
 const PRECACHE_ASSETS = [

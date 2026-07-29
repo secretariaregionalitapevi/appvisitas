@@ -1,4 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+  const escapeHtml = (value) => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
   const config = JSON.parse(sessionStorage.getItem('visitas_config'));
   if (!config) {
     window.location.href = '/';
@@ -193,17 +200,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (res.status === 409 && errorData.code === 'duplicate') {
           const existing = errorData.details && errorData.details.existing ? errorData.details.existing : null;
-          const duplicateMessage = existing
-            ? [
-                errorData.error || 'Já existe um lançamento para esta comum no mês e ano selecionados.',
-                '',
-                `Comum: ${existing.comum || errorData.details.comum || 'Não informada'}`,
-                `Município: ${existing.municipio || 'Não informado'}`,
-                `Responsável: ${existing.identificacao || 'Não informado'}`,
-                `Data: ${existing.data_lancamento || existing.created_at || 'Não informada'}`
-              ].join('\n')
-            : (errorData.error || 'Já existe um lançamento para esta comum no mês e ano selecionados.');
-          throw new Error(duplicateMessage);
+          const comum = existing?.comum || errorData.details?.comum || config.comum || 'Comum não informada';
+          const periodo = `${config.mes || 'mês selecionado'} de ${payload.referencia_ano}`;
+
+          await Swal.fire({
+            title: 'Lançamento já realizado',
+            html: `
+              <p style="margin: 0; color: #64748b; line-height: 1.6;">
+                Já existe um lançamento para<br>
+                <strong style="color: #1e4b7a;">${escapeHtml(comum)}</strong><br>
+                <span style="font-size: 14px;">${escapeHtml(periodo)}</span>
+              </p>
+            `,
+            icon: 'info',
+            confirmButtonText: 'Entendi',
+            confirmButtonColor: '#1e4b7a'
+          });
+          return;
         }
 
         throw new Error(errorData.error || errorData.details || 'Falha no envio do relatório.');

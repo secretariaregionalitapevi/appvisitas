@@ -19,7 +19,7 @@
   <link rel="icon" sizes="192x192" href="/icons/icon-192.png?v=4" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/scripts/auth.js?v=1.0.8"></script>
+  <script src="/scripts/auth.js?v=1.0.9"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body style="margin: 0; background: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column;">
@@ -30,7 +30,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
       <a href="/" class="btn-logout btn-back">&larr; Voltar</a>
-      <a href="#" id="btnLogoutTop" class="btn-logout">Sair</a>
+      <a href="#" id="btnLogoutTop" class="btn-logout" data-auth-only>Sair</a>
     </div>
   </div>
 
@@ -89,6 +89,6 @@
       }
     });
   </script>
-  <script src="/scripts/visitas.js?v=1.0.8"></script>
+  <script src="/scripts/visitas.js?v=1.0.9"></script>
 </body>
 </html>

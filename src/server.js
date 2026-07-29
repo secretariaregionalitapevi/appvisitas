@@ -52,10 +52,11 @@ process.env.SUPABASE_URL = SUPABASE_URL;
 process.env.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 process.env.SUPABASE_SERVICE_ROLE_KEY = SUPABASE_SERVICE_ROLE_KEY;
 const SUPABASE_TABLE_VISITAS = process.env.SUPABASE_TABLE_VISITAS || "visitas_lancamentos";
-const WEBHOOK_VISITAS = process.env.WEBHOOK_VISITAS || "";
 const REQUIRE_SUPABASE_DUPLICATE_CHECK = (process.env.REQUIRE_SUPABASE_DUPLICATE_CHECK || "true").toLowerCase() !== "false";
 const ENABLE_LOCAL_PERSISTENCE = (process.env.ENABLE_LOCAL_PERSISTENCE || "false").toLowerCase() === "true";
 const REQUIRE_LOCAL_DUPLICATE_CHECK = (process.env.REQUIRE_LOCAL_DUPLICATE_CHECK || "false").toLowerCase() === "true";
+// Chave temporaria de transicao. Defina AUTH_REQUIRED=true para restaurar o login.
+const AUTH_REQUIRED = (process.env.AUTH_REQUIRED || "false").toLowerCase() === "true";
 
 const mimeTypes = {
   ".html": "text/html; charset=utf-8",
@@ -566,7 +567,7 @@ async function serveStatic(reqPath, res) {
 
 function routeToPage(pathname) {
   if (pathname === "/") return "index.html";
-  if (pathname === "/login.html") return "login.html";
+  if (pathname === "/login.html") return AUTH_REQUIRED ? "login.html" : "index.html";
   if (pathname === "/registro.html" || pathname === "/registro") return "registro.html";
   if (pathname === "/visitas.html" || pathname === "/visitas") return "visitas.html";
   if (pathname === "/cadastro") return "cadastro.html";
@@ -653,7 +654,8 @@ async function handleRequest(req, res) {
         });
         res.end(JSON.stringify({
           url: SUPABASE_URL,
-          anonKey: SUPABASE_ANON_KEY
+          anonKey: SUPABASE_ANON_KEY,
+          authRequired: AUTH_REQUIRED
         }));
         return;
       }
@@ -712,10 +714,11 @@ async function handleRequest(req, res) {
         return sendJson(res, 500, { error: "Configuracao do Supabase ausente." });
       }
 
-      const authUser = await verifySupabaseToken(req.headers.authorization);
-      if (!authUser) {
-        return sendJson(res, 401, { error: "Não autorizado. Faça login novamente." });
-      }
+      if (AUTH_REQUIRED) {
+        const authUser = await verifySupabaseToken(req.headers.authorization);
+        if (!authUser) {
+          return sendJson(res, 401, { error: "Não autorizado. Faça login novamente." });
+        }
 
       const profile = await getUserProfile(authUser.id);
       if (!profile) {
@@ -742,6 +745,8 @@ async function handleRequest(req, res) {
             error: "Ação bloqueada: você só pode lançar para a sua própria comum."
           });
         }
+      }
+
       }
 
       try {
@@ -821,23 +826,6 @@ async function handleRequest(req, res) {
           ? err.message.replace("supabase_error:", "").trim()
           : "Falha de conexao com Supabase.";
         return sendJson(res, 500, { error: msg });
-      }
-
-      const webhookUrl = process.env.WEBHOOK_VISITAS;
-      if (webhookUrl && saved) {
-        try {
-          await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...payload,
-              id: saved.id,
-              created_at: saved.created_at || saved.createdAt || null
-            })
-          });
-        } catch (err) {
-          console.error("Erro no Webhook:", err);
-        }
       }
 
       sendJson(res, 201, {
@@ -944,4 +932,3 @@ if (process.env.VERCEL) {
     console.log(`Servidor iniciado em http://localhost:${PORT}`);
   });
 }
-

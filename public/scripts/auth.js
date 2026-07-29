@@ -20,6 +20,7 @@ window.initSupabase = async () => {
   try {
     const res = await fetch('/api/config');
     const config = await res.json();
+    window.authRequired = config.authRequired !== false;
 
     // Atribui ao escopo global para outros scripts usarem se necessario
     window.supabaseClient = supabase.createClient(config.url, config.anonKey, {
@@ -30,6 +31,10 @@ window.initSupabase = async () => {
     });
 
     supabaseClient = window.supabaseClient;
+
+    document.querySelectorAll('[data-auth-only]').forEach((element) => {
+      element.hidden = !window.authRequired;
+    });
   } catch (err) {
     console.error('Falha ao inicializar Supabase:', err);
   }
@@ -37,6 +42,15 @@ window.initSupabase = async () => {
 
 window.checkAuth = async () => {
   if (!supabaseClient) await initSupabase();
+
+  if (!window.authRequired) {
+    return {
+      id: null,
+      email: 'Acesso temporario',
+      user_metadata: { full_name: 'Responsavel pelo lancamento' },
+      isTemporaryAccess: true
+    };
+  }
 
   const { data: { session } } = await supabaseClient.auth.getSession();
   const user = session?.user;
