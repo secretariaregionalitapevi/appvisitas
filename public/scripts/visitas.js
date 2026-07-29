@@ -85,6 +85,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.updateSummaryWithName(window.currentUser);
   }
 
+  const categorias = ['gvi', 'gvm', 'gvmu', 'rf', 're'];
+  let camposBloqueados = new Set();
+
+  function atualizarTotal() {
+    const totalField = document.getElementById('totalGlobal');
+    const inputs = container.querySelectorAll('.count-input:not(.total-field)');
+    const total = Array.from(inputs).reduce((sum, input) => sum + parseInt(input.value || 0, 10), 0);
+    if (totalField) totalField.value = total;
+  }
+
   function renderMonthlyForm() {
     container.innerHTML = `
       <div class="sunday-card">
@@ -134,19 +144,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
 
-      input.addEventListener('input', () => {
-        let sum = 0;
-        inputs.forEach((item) => {
-          sum += parseInt(item.value || 0, 10);
-        });
-        if (totalField) {
-          totalField.value = sum;
-        }
-      });
+      input.addEventListener('input', atualizarTotal);
     });
   }
 
   renderMonthlyForm();
+
+  async function consultarLancamentos() {
+    const params = new URLSearchParams({
+      comum: config.comum || '',
+      referencia_mes: String(obterNumeroMes(config.mes)),
+      referencia_ano: String(new Date().getFullYear())
+    });
+
+    try {
+      const response = await window.authFetch(`/api/visitas/status?${params.toString()}`);
+      if (!response.ok) throw new Error('Não foi possível consultar os lançamentos existentes.');
+
+      const status = await response.json();
+      camposBloqueados = new Set(status.campos_lancados || []);
+
+      categorias.forEach((categoria) => {
+        const input = form.elements[categoria];
+        if (!input) return;
+
+        if (camposBloqueados.has(categoria)) {
+          input.value = String(status.valores?.[categoria] ?? 0);
+          input.disabled = true;
+          input.style.backgroundColor = '#e2e8f0';
+          input.style.borderColor = '#cbd5e1';
+          input.style.color = '#64748b';
+          input.title = 'Este lançamento já foi realizado para o mês selecionado.';
+          input.closest('.form-group')?.querySelector('label')?.insertAdjacentHTML(
+            'beforeend',
+            ' <small style="color:#64748b;font-weight:600;">(já lançado)</small>'
+          );
+        }
+      });
+
+      atualizarTotal();
+    } catch (error) {
+      await Swal.fire('Erro', error.message, 'error');
+    }
+  }
+
+  await consultarLancamentos();
 
   if (datePickerRow && selectedDateSelect) {
     datePickerRow.classList.add('hidden');
@@ -166,6 +208,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const rawData = Object.fromEntries(formData.entries());
     const monthInt = obterNumeroMes(config.mes);
 
+    const categoriasParaEnviar = categorias.filter((categoria) => (
+      !camposBloqueados.has(categoria) && parseInt(rawData[categoria] || 0, 10) > 0
+    ));
+
+    if (categoriasParaEnviar.length === 0) {
+      Swal.fire('Atenção', 'Informe ao menos um lançamento ainda disponível.', 'info');
+      return;
+    }
+
     const payload = {
       referencia_mes: monthInt,
       referencia_ano: new Date().getFullYear(),
@@ -174,6 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       gvmu: parseInt(rawData.gvmu || 0, 10),
       rf: parseInt(rawData.rf || 0, 10),
       re: parseInt(rawData.re || 0, 10),
+      categorias: categoriasParaEnviar,
       municipio: config.municipio,
       comum: config.comum,
       identificacao: window.auxiliarFullName || user.email,
@@ -202,12 +254,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           const existing = errorData.details && errorData.details.existing ? errorData.details.existing : null;
           const comum = existing?.comum || errorData.details?.comum || config.comum || 'Comum não informada';
           const periodo = `${config.mes || 'mês selecionado'} de ${payload.referencia_ano}`;
+          const conflitos = (errorData.details?.campos || []).map((campo) => campo.toUpperCase()).join(', ');
 
           await Swal.fire({
             title: 'Lançamento já realizado',
             html: `
               <p style="margin: 0; color: #64748b; line-height: 1.6;">
-                Já existe um lançamento para<br>
+                Já existe lançamento para ${escapeHtml(conflitos || 'uma das categorias selecionadas')} em<br>
                 <strong style="color: #1e4b7a;">${escapeHtml(comum)}</strong><br>
                 <span style="font-size: 14px;">${escapeHtml(periodo)}</span>
               </p>

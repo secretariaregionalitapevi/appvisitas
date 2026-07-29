@@ -19,6 +19,10 @@ window.togglePassword = (id) => {
 window.initSupabase = async () => {
   try {
     const res = await fetch('/api/config');
+    if (!res.ok) {
+      throw new Error(`Servidor indisponível (HTTP ${res.status}).`);
+    }
+
     const config = await res.json();
     window.authRequired = config.authRequired !== false;
 
@@ -35,8 +39,10 @@ window.initSupabase = async () => {
     document.querySelectorAll('[data-auth-only]').forEach((element) => {
       element.hidden = !window.authRequired;
     });
+    return window.supabaseClient;
   } catch (err) {
     console.error('Falha ao inicializar Supabase:', err);
+    throw new Error('Não foi possível conectar ao servidor. Verifique se a aplicação está em execução.');
   }
 };
 
@@ -65,6 +71,10 @@ window.checkAuth = async () => {
 
 window.authFetch = async (url, options = {}) => {
   if (!supabaseClient) await initSupabase();
+
+  if (!supabaseClient?.auth) {
+    throw new Error('Serviço de autenticação indisponível.');
+  }
 
   const { data: { session } } = await supabaseClient.auth.getSession();
   const token = session?.access_token;

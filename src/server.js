@@ -629,7 +629,7 @@ async function handleRequest(req, res) {
       }
     }
 
-    if (req.method === "GET") {
+    if (req.method === "GET" && pathname !== "/api/visitas/status") {
       const page = routeToPage(pathname);
       if (page) {
         await serveStatic(page, res);
@@ -698,6 +698,53 @@ async function handleRequest(req, res) {
     }
 
     // --- LANCAMENTOS DE VISITAS ---
+    if (req.method === "GET" && pathname === "/api/visitas/status") {
+      const comum = url.searchParams.get("comum");
+      const referenciaMes = Number(url.searchParams.get("referencia_mes"));
+      const referenciaAno = Number(url.searchParams.get("referencia_ano"));
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseTable = process.env.SUPABASE_TABLE_VISITAS || "visitas_lancamentos";
+
+      if (!comum || !Number.isInteger(referenciaMes) || !Number.isInteger(referenciaAno)) {
+        return sendJson(res, 400, { error: "Comum, mes e ano sao obrigatorios." });
+      }
+
+      try {
+        const statusUrl = new URL(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/${supabaseTable}`);
+        statusUrl.searchParams.set("select", "id,comum,gvi,gvm,gvmu,rf,re");
+        statusUrl.searchParams.set("comum", `eq.${comum}`);
+        statusUrl.searchParams.set("referencia_ano", `eq.${referenciaAno}`);
+        statusUrl.searchParams.set("referencia_mes", `eq.${referenciaMes}`);
+        statusUrl.searchParams.set("limit", "1");
+
+        const statusResponse = await fetch(statusUrl, {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`
+          }
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error(await statusResponse.text());
+        }
+
+        const rows = await statusResponse.json();
+        const existing = Array.isArray(rows) ? rows[0] || null : rows;
+        const valores = Object.fromEntries(
+          ["gvi", "gvm", "gvmu", "rf", "re"].map((campo) => [campo, Number(existing?.[campo] || 0)])
+        );
+
+        return sendJson(res, 200, {
+          campos_lancados: Object.keys(valores).filter((campo) => valores[campo] > 0),
+          valores
+        });
+      } catch (err) {
+        console.error("Falha ao consultar lancamentos de visitas:", err);
+        return sendJson(res, 500, { error: "Erro ao consultar lancamentos existentes." });
+      }
+    }
+
     if (req.method === "POST" && pathname === "/api/visitas") {
       const payload = await readJsonBody(req);
 
@@ -751,17 +798,81 @@ async function handleRequest(req, res) {
 
       try {
         const supabaseEndpoint = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/${supabaseTable}`;
-        console.log("Saving to Supabase table:", supabaseTable);
+        const camposPermitidos = ["gvi", "gvm", "gvmu", "rf", "re"];
+        const camposSolicitados = Array.isArray(payload.categorias)
+          ? [...new Set(payload.categorias.filter((campo) => camposPermitidos.includes(campo)))]
+          : camposPermitidos.filter((campo) => Number(payload[campo]) > 0);
 
-        const resSupabase = await fetch(supabaseEndpoint, {
-          method: "POST",
+        if (camposSolicitados.length === 0) {
+          return sendJson(res, 400, { error: "Informe ao menos uma categoria com valor maior que zero." });
+        }
+
+        const valoresInvalidos = camposSolicitados.filter((campo) => (
+          !Number.isInteger(Number(payload[campo])) || Number(payload[campo]) <= 0
+        ));
+        if (valoresInvalidos.length > 0) {
+          return sendJson(res, 400, { error: "Os valores devem ser numeros inteiros maiores que zero." });
+        }
+
+        const lookupUrl = new URL(supabaseEndpoint);
+        lookupUrl.searchParams.set("select", "id,comum,municipio,gvi,gvm,gvmu,rf,re");
+        lookupUrl.searchParams.set("comum", `eq.${payload.comum}`);
+        lookupUrl.searchParams.set("referencia_ano", `eq.${payload.referencia_ano || new Date().getFullYear()}`);
+        lookupUrl.searchParams.set("referencia_mes", `eq.${payload.referencia_mes || payload.mes_referencia}`);
+        lookupUrl.searchParams.set("limit", "1");
+
+        const lookupResponse = await fetch(lookupUrl, {
           headers: {
             apikey: supabaseKey,
             Authorization: `Bearer ${supabaseKey}`
-            ,"Content-Type": "application/json",
+          }
+        });
+
+        if (!lookupResponse.ok) {
+          throw new Error(`supabase_error: ${await lookupResponse.text()}`);
+        }
+
+        const lookupRows = await lookupResponse.json();
+        const existing = Array.isArray(lookupRows) ? lookupRows[0] || null : lookupRows;
+        const conflitos = camposSolicitados.filter((campo) => Number(existing?.[campo] || 0) > 0);
+
+        if (conflitos.length > 0) {
+          return sendJson(res, 409, {
+            code: "duplicate",
+            error: "Uma ou mais categorias ja foram lancadas.",
+            details: { comum: payload.comum, campos: conflitos, existing }
+          });
+        }
+
+        const databasePayload = { ...payload };
+        delete databasePayload.categorias;
+        camposPermitidos.forEach((campo) => {
+          if (!camposSolicitados.includes(campo)) delete databasePayload[campo];
+        });
+
+        let method = "POST";
+        const saveUrl = new URL(supabaseEndpoint);
+        if (existing) {
+          method = "PATCH";
+          saveUrl.searchParams.set("id", `eq.${existing.id}`);
+          camposSolicitados.forEach((campo) => saveUrl.searchParams.set(campo, "eq.0"));
+
+          const total = camposPermitidos.reduce((sum, campo) => (
+            sum + Number(camposSolicitados.includes(campo) ? databasePayload[campo] : existing[campo] || 0)
+          ), 0);
+          databasePayload.total_visitas = total;
+          databasePayload.total = total;
+        }
+
+        const resSupabase = await fetch(saveUrl, {
+          method,
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            "Content-Type": "application/json",
             Prefer: "return=representation"
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(databasePayload)
         });
 
         const responseBody = await resSupabase.text();
@@ -776,37 +887,12 @@ async function handleRequest(req, res) {
           }
 
           if (parsedError && parsedError.code === "23505") {
-            let existing = null;
-            try {
-              const duplicateUrl = new URL(`${supabaseUrl.replace(/\/$/, "")}/rest/v1/${supabaseTable}`);
-              duplicateUrl.searchParams.set("select", "id,comum,municipio,identificacao,data_lancamento,created_at,referencia_ano,referencia_mes");
-              duplicateUrl.searchParams.set("comum", `eq.${payload.comum}`);
-              duplicateUrl.searchParams.set("referencia_ano", `eq.${payload.referencia_ano || new Date().getFullYear()}`);
-              duplicateUrl.searchParams.set("referencia_mes", `eq.${payload.referencia_mes || payload.mes_referencia || null}`);
-              duplicateUrl.searchParams.set("limit", "1");
-
-              const duplicateRes = await fetch(duplicateUrl, {
-                headers: {
-                  apikey: supabaseKey,
-                  Authorization: `Bearer ${supabaseKey}`
-                }
-              });
-
-              if (duplicateRes.ok) {
-                const duplicateBody = await duplicateRes.json();
-                existing = Array.isArray(duplicateBody) ? duplicateBody[0] || null : duplicateBody;
-              }
-            } catch (duplicateLookupError) {
-              console.error("Falha ao buscar lancamento existente:", duplicateLookupError);
-            }
-
             return sendJson(res, 409, {
               code: "duplicate",
-              error: "Já existe um lançamento para esta comum no mês e ano selecionados.",
+              error: "Outro lancamento foi realizado ao mesmo tempo.",
               details: {
                 comum: payload.comum,
-                referencia_mes: payload.referencia_mes || payload.mes_referencia || null,
-                referencia_ano: payload.referencia_ano || null,
+                campos: camposSolicitados,
                 existing
               }
             });
@@ -820,6 +906,13 @@ async function handleRequest(req, res) {
 
         const parsed = responseBody ? JSON.parse(responseBody) : [];
         saved = Array.isArray(parsed) ? parsed[0] : parsed;
+        if (existing && !saved) {
+          return sendJson(res, 409, {
+            code: "duplicate",
+            error: "Outra pessoa realizou este lancamento antes da conclusao do envio.",
+            details: { comum: payload.comum, campos: camposSolicitados, existing }
+          });
+        }
       } catch (err) {
         console.error("Falha ao conectar com Supabase:", err);
         const msg = err.message && err.message.startsWith("supabase_error:")

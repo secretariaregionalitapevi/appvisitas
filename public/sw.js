@@ -1,6 +1,6 @@
-// Force SW update for Supabase-only submission flow v2.0.6
-const CACHE_NAME = 'visitas-v2.0.6';
-const RUNTIME_CACHE = 'runtime-cache-v2.0.6';
+// Atualização do fluxo de lançamentos parciais por categoria.
+const CACHE_NAME = 'visitas-v2.0.7';
+const RUNTIME_CACHE = 'runtime-cache-v2.0.7';
 
 // Recursos essenciais para o primeiro carregamento (Shell do App)
 const PRECACHE_ASSETS = [
