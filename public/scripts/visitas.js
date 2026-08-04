@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <input type="number" name="gvm" min="0" value="0" required class="count-input">
           </div>
           <div class="form-group">
-            <label title="Grupo de Visitas Músicos">GVMU</label>
+            <label title="Grupo de Visitas Músicos">GVMúsicos</label>
             <input type="number" name="gvmu" min="0" value="0" required class="count-input">
           </div>
           <div class="form-group">
