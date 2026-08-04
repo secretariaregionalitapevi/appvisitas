@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = '/';
     return;
   }
+  const referenciaAno = Number(config.referenciaAno) || new Date().getFullYear();
 
   // Dinamizar Subtítulo
   if (config.comum) {
@@ -94,7 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const total = Array.from(inputs).reduce((sum, input) => sum + parseInt(input.value || 0, 10), 0);
     if (totalField) totalField.value = total;
   }
-
   function renderMonthlyForm() {
     container.innerHTML = `
       <div class="sunday-card">
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams({
       comum: config.comum || '',
       referencia_mes: String(obterNumeroMes(config.mes)),
-      referencia_ano: String(new Date().getFullYear())
+      referencia_ano: String(referenciaAno)
     });
 
     try {
@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const payload = {
       referencia_mes: monthInt,
-      referencia_ano: new Date().getFullYear(),
+      referencia_ano: referenciaAno,
       gvi: parseInt(rawData.gvi || 0, 10),
       gvm: parseInt(rawData.gvm || 0, 10),
       gvmu: parseInt(rawData.gvmu || 0, 10),

@@ -338,7 +338,7 @@ textarea:focus {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  overflow: hidden; /* For header rounding */
+  overflow: visible;
   text-align: center;
 }
 
@@ -346,6 +346,7 @@ textarea:focus {
   background: #1e4b7a; /* Blue from mockup */
   padding: 40px 30px;
   color: #fff;
+  border-radius: 16px 16px 0 0;
 }
 
 .sac-logo {
@@ -393,6 +394,7 @@ textarea:focus {
 .sac-body {
   padding: 40px;
   background: #fff;
+  border-radius: 0 0 16px 16px;
 }
 
 @media (max-width: 480px) {

@@ -9,7 +9,7 @@
   <title>Principal - Registros de Visitas - Regional Itapevi</title>
   <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=4" />
   <link rel="shortcut icon" type="image/png" href="/favicon.png?v=4" />
-  <link rel="stylesheet" href="/styles/main.css?v=1.0.8" />
+  <link rel="stylesheet" href="/styles/main.css?v=1.0.9" />
   <link rel="manifest" href="/manifest.json?v=4" />
   <meta name="theme-color" content="#ffffff" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,8 +52,17 @@
             <select id="mes" name="mes" required></select>
           </div>
 
-          <input type="hidden" id="municipio" name="municipio" required />
           <input type="hidden" id="comum" name="comum" required />
+
+          <!-- Municipio -->
+          <div class="form-group">
+            <div class="input-icon-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M6 21V7l6-4 6 4v14"></path><path d="M9 10h.01"></path><path d="M9 14h.01"></path><path d="M9 18h.01"></path><path d="M15 10h.01"></path><path d="M15 14h.01"></path><path d="M15 18h.01"></path></svg>
+            </div>
+            <select id="municipio" name="municipio" required disabled>
+              <option value="">Carregando munic&iacute;pios...</option>
+            </select>
+          </div>
 
           <!-- Comum -->
           <div class="form-group">
@@ -61,7 +70,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             </div>
             <div class="sac-search-container">
-              <input type="text" id="comumSearch" placeholder="Pesquise sua Comum..." autocomplete="off" />
+              <input type="text" id="comumSearch" placeholder="Selecione primeiro o munic&iacute;pio" autocomplete="off" disabled />
               <div id="comumResults" class="sac-search-results"></div>
             </div>
           </div>
@@ -90,6 +99,7 @@
       const comumInput = document.getElementById('comum');
       const comumSearch = document.getElementById('comumSearch');
       const comumResults = document.getElementById('comumResults');
+      const municipioSelect = document.getElementById('municipio');
       let allComuns = [];
       const findComum = (value = '') => {
         const term = String(value || '').trim().toLowerCase();
@@ -101,10 +111,27 @@
         const resComuns = await fetch('/api/comuns');
         allComuns = await resComuns.json();
 
+        const municipios = [...new Set(allComuns.map((item) => String(item.cidade || '').trim()).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        municipioSelect.innerHTML = '<option value="">Selecione o munic&iacute;pio...</option>';
+        municipios.forEach((municipio) => {
+          const option = document.createElement('option');
+          option.value = municipio;
+          option.textContent = municipio;
+          municipioSelect.appendChild(option);
+        });
+        municipioSelect.disabled = false;
+
         const renderResults = (filter = '') => {
+          const municipio = municipioSelect.value;
+          if (!municipio) {
+            comumResults.innerHTML = '';
+            comumResults.classList.remove('active');
+            return;
+          }
+
           const filtered = allComuns.filter((c) =>
-            c.comum.toLowerCase().includes(filter.toLowerCase()) ||
-            c.cidade.toLowerCase().includes(filter.toLowerCase())
+            c.cidade === municipio && c.comum.toLowerCase().includes(filter.toLowerCase())
           );
 
           comumResults.innerHTML = filtered.map((c) => `
@@ -114,8 +141,17 @@
             </div>
           `).join('');
 
-          comumResults.classList.toggle('active', filtered.length > 0 && filter !== '');
+          comumResults.classList.toggle('active', filtered.length > 0);
         };
+
+        municipioSelect.addEventListener('change', () => {
+          comumInput.value = '';
+          comumSearch.value = '';
+          comumSearch.disabled = !municipioSelect.value;
+          comumSearch.placeholder = municipioSelect.value ? 'Pesquise sua Comum...' : 'Selecione primeiro o munic&iacute;pio';
+          comumResults.innerHTML = '';
+          comumResults.classList.remove('active');
+        });
 
         comumSearch.addEventListener('input', (e) => renderResults(e.target.value));
         comumSearch.addEventListener('focus', () => {
@@ -135,7 +171,7 @@
             const city = item.dataset.city;
             document.getElementById('comum').value = val;
             comumSearch.value = val;
-            document.getElementById('municipio').value = city;
+            municipioSelect.value = city;
             comumResults.classList.remove('active');
           }
         });
@@ -160,6 +196,7 @@
           const userRoleId = parseInt(profile.role_id || profile.nivel || 6, 10);
           if (!allowedRoles.includes(userRoleId)) {
             document.getElementById('mes').disabled = true;
+            municipioSelect.disabled = true;
             document.getElementById('comumSearch').disabled = true;
             const btnProsseguir = document.getElementById('btnProsseguir');
             if (btnProsseguir) {
@@ -192,7 +229,7 @@
             console.log('Dados de metadata encontrados:', meta);
 
             const userComum = meta.comum || meta.comum_congregacao || meta.congregacao || meta.polo || meta.polo_participacao || '';
-            const userCity = meta.cidade || meta.municipio || (findComum(userComum) || {}).cidade || meta.polo || 'Itapevi';
+            const userCity = (findComum(userComum) || {}).cidade || meta.cidade || meta.municipio || meta.polo || 'Itapevi';
 
             if (userComum) {
               console.log('Comum descoberta via metadata:', userComum);
@@ -212,12 +249,14 @@
 
           if (profile && profile.comum) {
             const userComum = profile.comum;
-            const userCity = profile.cidade || (findComum(userComum) || {}).cidade || 'Itapevi';
+            const userCity = (findComum(userComum) || {}).cidade || profile.cidade || 'Itapevi';
 
             comumInput.value = userComum;
             comumSearch.value = userComum;
             comumSearch.readOnly = true;
-            document.getElementById('municipio').value = userCity;
+            comumSearch.disabled = false;
+            municipioSelect.value = userCity;
+            municipioSelect.disabled = true;
 
             const group = comumSearch.closest('.form-group');
             group.classList.add('is-locked');
@@ -239,16 +278,19 @@
       const mesSelect = document.getElementById('mes');
       const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
       const now = new Date();
+      const competenciaPadrao = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       meses.forEach((m, i) => {
         const opt = document.createElement('option');
         opt.value = m;
         opt.textContent = m;
-        if (i === now.getMonth()) opt.selected = true;
+        if (i === competenciaPadrao.getMonth()) opt.selected = true;
         mesSelect.appendChild(opt);
       });
 
       const handleNavigation = () => {
         const mes = document.getElementById('mes').value;
+        const mesIndex = meses.indexOf(mes);
+        const referenciaAno = mesIndex > now.getMonth() ? now.getFullYear() - 1 : now.getFullYear();
         const comum = document.getElementById('comum').value;
         let municipio = document.getElementById('municipio').value;
 
@@ -265,7 +307,7 @@
 
           Swal.fire({
             title: 'Campos Incompletos',
-            text: 'Por favor, selecione o Mes e a Casa de Oracao antes de prosseguir.',
+            text: 'Por favor, selecione o Mês, o Município e a Casa de Oração antes de prosseguir.',
             icon: 'warning',
             confirmButtonColor: '#1e4b7a'
           });
@@ -274,6 +316,7 @@
 
         const configData = {
           mes,
+          referenciaAno,
           municipio,
           comum,
           type: 'monthly'
