@@ -1,6 +1,6 @@
 // Atualização do fluxo de lançamentos parciais por categoria.
-const CACHE_NAME = 'visitas-v2.0.7';
-const RUNTIME_CACHE = 'runtime-cache-v2.0.7';
+const CACHE_NAME = 'visitas-v2.0.8';
+const RUNTIME_CACHE = 'runtime-cache-v2.0.8';
 
 // Recursos essenciais para o primeiro carregamento (Shell do App)
 const PRECACHE_ASSETS = [
@@ -45,50 +45,48 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar requisições que não sejam GET, requisições de API ou URLs externas dinâmicas
+  const request = event.request;
+  const url = new URL(request.url);
+
   if (
-    event.request.method !== 'GET' ||
-    event.request.url.includes('supabase.co') ||
-    event.request.url.includes('/api/') ||
-    event.request.url.includes('cdn.jsdelivr.net') ||
-    !event.request.url.startsWith('http')
+    request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname.startsWith('/api/')
   ) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Se estiver no cache, retorna e tenta atualizar em background (stale-while-revalidate)
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(event.request, networkResponse);
-            });
+  // Paginas devem refletir o deploy atual. O cache e apenas contingencia offline.
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseToCache));
           }
-        }).catch(() => {});
-        return cachedResponse;
-      }
+          return networkResponse;
+        })
+        .catch(async () => (
+          (await caches.match(request)) ||
+          (await caches.match('/index.html'))
+        ))
+    );
+    return;
+  }
 
-      return fetch(event.request).then((networkResponse) => {
-        // Se não estiver no cache, busca na rede e armazena se for sucesso
-        if (
-          networkResponse &&
-          networkResponse.status === 200 &&
-          networkResponse.type === 'basic'
-        ) {
+  // Recursos estaticos usam cache com atualizacao em segundo plano.
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      const networkUpdate = fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.ok) {
           const responseToCache = networkResponse.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, responseToCache));
         }
         return networkResponse;
-      }).catch(() => {
-        // Fallback offline para navegação
-        if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
-        }
-      });
+      }).catch(() => cachedResponse);
+
+      return cachedResponse || networkUpdate;
     })
   );
 });

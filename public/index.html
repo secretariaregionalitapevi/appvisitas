@@ -153,7 +153,10 @@
           comumResults.classList.remove('active');
         });
 
-        comumSearch.addEventListener('input', (e) => renderResults(e.target.value));
+        comumSearch.addEventListener('input', (e) => {
+          comumInput.value = '';
+          renderResults(e.target.value);
+        });
         comumSearch.addEventListener('focus', () => {
           if (comumSearch.value === '') renderResults('');
           comumResults.classList.add('active');
@@ -294,20 +297,13 @@
         const comum = document.getElementById('comum').value;
         let municipio = document.getElementById('municipio').value;
 
-        if (!mes || !municipio || !comum) {
-          const searchVal = document.getElementById('comumSearch').value;
-          if (searchVal && (!comum || !municipio)) {
-            const firstResult = document.querySelector('.sac-search-item');
-            if (firstResult) {
-              document.getElementById('comum').value = firstResult.dataset.value;
-              document.getElementById('municipio').value = firstResult.dataset.city;
-              return handleNavigation();
-            }
-          }
+        const selectedComum = findComum(comum);
+        const selectionIsValid = selectedComum && selectedComum.cidade === municipio;
 
+        if (!mes || !municipio || !comum || !selectionIsValid) {
           Swal.fire({
             title: 'Campos Incompletos',
-            text: 'Por favor, selecione o Mês, o Município e a Casa de Oração antes de prosseguir.',
+            text: 'Selecione o mês, o município e uma Comum da lista antes de prosseguir.',
             icon: 'warning',
             confirmButtonColor: '#1e4b7a'
           });
